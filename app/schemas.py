@@ -3,7 +3,6 @@ from typing import List, Optional
 from datetime import datetime
 from enum import Enum
 from decimal import Decimal, InvalidOperation
-from pydantic import BaseModel, Field, validator
 
 class ShareType(str, Enum):
     PERCENTAGE = "percentage"
@@ -29,7 +28,7 @@ class PersonCreate(PersonBase):
     pass
 
 class Person(PersonBase):
-    id: int
+    id: str  # Changed to str for MongoDB ObjectId
 
     class Config:
         from_attributes = True
@@ -81,37 +80,7 @@ class ExpenseCreate(BaseModel):
         return v
 
 class Expense(ExpenseCreate):
-    id: int
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-class ExpenseBase(BaseModel):
-    amount: Decimal = Field(..., gt=0)
-    description: str = Field(..., min_length=1, max_length=255)
-    paid_by: str = Field(..., min_length=1, max_length=100)
-    category: str = Field(..., min_length=1, max_length=50)
-    shares: List[ExpenseShare]
-
-    @validator('shares')
-    def validate_shares(cls, v, values):
-        if not v:
-            raise ValueError('At least one share is required')
-        
-        # Check for duplicate people
-        people = set()
-        for share in v:
-            if share.person in people:
-                raise ValueError(f'Duplicate share for person: {share.person}')
-            people.add(share.person)
-            
-        return v
-
-
-
-class Expense(ExpenseBase):
-    id: int
+    id: str  # Changed to str for MongoDB ObjectId
     created_at: datetime
 
     class Config:

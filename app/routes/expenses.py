@@ -279,11 +279,19 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
         for person in new_people:
             people[person.name] = person
 
+    # Get or create category
+    category = db.query(models.Category).filter(models.Category.name == expense.category.value).first()
+    if not category:
+        category = models.Category(name=expense.category.value)
+        db.add(category)
+        db.flush()
+
     # Create expense
     db_expense = models.Expense(
         amount=Decimal(str(expense.amount)),  # Convert float to Decimal
         description=expense.description,
-        paid_by=people[expense.paid_by].id
+        paid_by=people[expense.paid_by].id,
+        category_id=category.id
     )
     db.add(db_expense)
     db.flush()  # Get expense id before creating shares
@@ -322,6 +330,7 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
         "id": db_expense.id,
         "amount": db_expense.amount,
         "description": db_expense.description,
+        "category": db_expense.category.name,
         "paid_by": db_expense.paid_by_person.name,
         "created_at": db_expense.created_at,
         "shares": calculate_shares(db_expense.amount, expense.shares)
